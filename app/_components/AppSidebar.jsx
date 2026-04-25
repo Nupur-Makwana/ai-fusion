@@ -14,9 +14,9 @@ import { useTheme } from "next-themes";
 export function AppSidebar() {
     const {theme,setTheme} = useTheme()
   return (
-    <Sidebar>
+    <Sidebar className={'bg-background'}>
       <SidebarHeader />
-        <div className="p-3" >
+        <div className="p-3 " >
             <div className=" flex  justify-baseline items-center gap-10">
                 <div className="flex items-center gap-3">
                 <Image src={'/logo.svg'} alt="logo" width={60} height = {60}
