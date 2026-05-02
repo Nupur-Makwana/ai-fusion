@@ -28,7 +28,7 @@ export default [
   {
     model: "DeepSeek",
     icon: "/deepseek.png",
-    premium: true,
+    premium: false,
     enable: true,
     subModel: [
       { name: "DeepSeek R1", premium: false, id: "DeepSeek-R1" },
@@ -58,7 +58,7 @@ export default [
   {
     model: "Cohere",
     icon: "/cohere.png",
-    premium: false,
+    premium: true,
     enable: true,
     subModel: [
       { name: "Cohere Command A", premium: false, id: "cohere-command-a" },
