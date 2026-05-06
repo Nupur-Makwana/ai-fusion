@@ -8,44 +8,56 @@ import {
   SidebarHeader,
 } from "@/components/ui/sidebar"
 import { Button } from "@/components/ui/button";
-import { Moon, Sun } from "lucide-react";
+import { Bolt, Moon, Sun, User2, Zap } from "lucide-react";
 import { useTheme } from "next-themes";
+import { SignInButton, useUser } from "@clerk/nextjs";
 
 export function AppSidebar() {
-    const {theme,setTheme} = useTheme()
+  const { theme, setTheme } = useTheme()
+  const { user } = useUser();
   return (
     <Sidebar className={'bg-background'}>
       <SidebarHeader />
-        <div className="p-3 " >
-            <div className=" flex  justify-baseline items-center gap-10">
-                <div className="flex items-center gap-3">
-                <Image src={'/logo.svg'} alt="logo" width={60} height = {60}
-                className ="w-[40px] h-[40px]"
-                />
-                <h2 className="font-bold text-xl">Fusion Ai</h2>
-                </div>
-                <div>
-                    {theme =='light'?  <Button variant={'ghost'} onClick={()=>setTheme('dark')}><Sun /></Button>  
-                    :<Button variant= {'ghost'} onClick={()=>setTheme('light')}><Moon /></Button>}
-                </div>
-             </div>
-        <Button className='mt-7 w-full' size='lg'>+ New Chat</Button>
+      <div className="p-3 " >
+        <div className=" flex  justify-baseline items-center gap-10">
+          <div className="flex items-center gap-3">
+            <Image src={'/logo.svg'} alt="logo" width={60} height={60}
+              className="w-[40px] h-[40px]"
+            />
+            <h2 className="font-bold text-xl">Fusion Ai</h2>
+          </div>
+          <div>
+            {theme == 'light' ? <Button variant={'ghost'} onClick={() => setTheme('dark')}><Sun /></Button>
+              : <Button variant={'ghost'} onClick={() => setTheme('light')}><Moon /></Button>}
+          </div>
         </div>
+        <Button className='mt-7 w-full' size='lg'>+ New Chat</Button>
+      </div>
 
       <SidebarContent>
         <SidebarGroup>
-            <div  className='p-3'> 
-                <h2 className="font-bold text-lg">Chat</h2>
-                <p className='text-sm text-gray-400'>Sign in to start chatting with multiple ai model</p>
-            </div>
+          <div className='p-3'>
+            <h2 className="font-bold text-lg">Chat</h2>
+            <p className='text-sm text-gray-400'>Sign in to start chatting with multiple ai model</p>
+          </div>
         </SidebarGroup>
 
       </SidebarContent>
       <SidebarFooter>
         <div className="p-3 mb-10">
+          {!user ? <SignInButton mode="modal">
             <Button className={'w-full'}>Sign In/Sign Up</Button>
+          </SignInButton>
+            :
+            <div>
+              <Button className={'w-full mb-3'}><Zap />Upgrade Plan</Button>
+            <Button className='flex w-full' variant={'ghost'}>
+              <User2 /> <h2>Setting</h2>
+            </Button>
+            </div>
+          }
         </div>
-        </SidebarFooter>
+      </SidebarFooter>
     </Sidebar>
   )
 }
