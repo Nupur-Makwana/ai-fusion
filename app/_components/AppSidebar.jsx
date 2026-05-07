@@ -31,15 +31,20 @@ export function AppSidebar() {
               : <Button variant={'ghost'} onClick={() => setTheme('light')}><Moon /></Button>}
           </div>
         </div>
-        <Button className='mt-7 w-full' size='lg'>+ New Chat</Button>
+        {user ? (
+          <Button className='mt-7 w-full' size='lg'>+ New Chat</Button>
+        ) : (
+          <SignInButton mode="modal">
+            <Button className='mt-7 w-full' size='lg'>+ New Chat</Button>
+          </SignInButton>
+        )}
       </div>
 
       <SidebarContent>
         <SidebarGroup>
           <div className='p-3'>
             <h2 className="font-bold text-lg">Chat</h2>
-            <p className='text-sm text-gray-400'>Sign in to start chatting with multiple ai model</p>
-          </div>
+            {!user &&<p className='text-sm text-gray-400'>Sign in to start chatting with multiple ai model</p>}          </div>
         </SidebarGroup>
 
       </SidebarContent>
@@ -51,9 +56,9 @@ export function AppSidebar() {
             :
             <div>
               <Button className={'w-full mb-3'}><Zap />Upgrade Plan</Button>
-            <Button className='flex w-full' variant={'ghost'}>
-              <User2 /> <h2>Setting</h2>
-            </Button>
+              <Button className='flex w-full' variant={'ghost'}>
+                <User2 /> <h2>Setting</h2>
+              </Button>
             </div>
           }
         </div>
