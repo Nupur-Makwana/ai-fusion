@@ -1,16 +1,21 @@
 "use client"
 
-import React, { useEffect } from 'react'
-import { ThemeProvider as NextThemesProvider } from "next-themes"
-import { SidebarProvider } from '@/components/ui/sidebar'
-import { AppSidebar } from './_components/AppSidebar'
-import AppHeader from './_components/AppHeader'
-import { db } from '@/config/FirebaseConfig'
-import { doc, getDoc, setDoc } from 'firebase/firestore'
-import { useUser } from '@clerk/nextjs'
+import { AiSelectedModelContext } from '@/context/AiSelectedModelContext';
+import { UserDetailContext } from '@/context/UserDetailContext'; 
+import { DefaultModel } from '@/shared/AiModelsShared';
+import React, { useEffect, useState } from 'react';
+import { ThemeProvider as NextThemesProvider } from "next-themes";
+import { SidebarProvider } from '@/components/ui/sidebar';
+import { AppSidebar } from './_components/AppSidebar';
+import AppHeader from './_components/AppHeader';
+import { db } from '@/config/FirebaseConfig';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { useUser } from '@clerk/nextjs';
 
 function Provider({ children }) {
   const { user } = useUser();
+  const [aiSelectedModels, setAiSelectedModels] = useState(DefaultModel);
+  const [userDetail, setUserDetail] = useState();
 
   useEffect(() => {
     if (user) {
@@ -19,7 +24,6 @@ function Provider({ children }) {
   }, [user]);
 
   const checkAndCreateUser = async () => {
-    // 1. Guard clause: Ensure email exists
     const email = user?.primaryEmailAddress?.emailAddress;
     if (!email) return;
 
@@ -27,22 +31,30 @@ function Provider({ children }) {
       const userRef = doc(db, "users", email);
       const userSnap = await getDoc(userRef);
 
-      // 2. Fix: use .exists() [method] not .exist() [property]
       if (userSnap.exists()) {
         console.log("Existing User");
+        const userInfo = userSnap.data();
+        
+        
+        if (userInfo?.selectedModelPref) {
+          setAiSelectedModels(userInfo.selectedModelPref);
+        }
+        
+        setUserDetail(userInfo);
         return;
       } else {
-        // 3. Define userData properly inside this scope
         const userData = {
           name: user?.fullName || "Anonymous",
           email: email,
-          createdAt: new Date().toISOString(), // Use a string or serverTimestamp
+          createdAt: new Date().toISOString(),
           remainingMsg: 5,
           plan: "Free",
-          credits: 1000
+          credits: 1000,
+          selectedModelPref: DefaultModel 
         };
-        
+
         await setDoc(userRef, userData);
+        setUserDetail(userData); 
         console.log("New user data saved");
       }
     } catch (error) {
@@ -57,17 +69,21 @@ function Provider({ children }) {
       enableSystem
       disableTransitionOnChange
     >
-      <SidebarProvider>
-        <AppSidebar />
-        <div className='w-full flex flex-col h-screen overflow-hidden'>
-          <AppHeader />
-          <main className='flex-1 overflow-hidden relative'>
-            {children}
-          </main>
-        </div>
-      </SidebarProvider>
+      <UserDetailContext.Provider value={{ userDetail, setUserDetail }}>
+        <AiSelectedModelContext.Provider value={{ aiSelectedModels, setAiSelectedModels }}>
+          <SidebarProvider>
+            <AppSidebar />
+            <div className='w-full flex flex-col h-screen overflow-hidden'>
+              <AppHeader />
+              <main className='flex-1 overflow-hidden relative'>
+                {children}
+              </main>
+            </div>
+          </SidebarProvider>
+        </AiSelectedModelContext.Provider>
+      </UserDetailContext.Provider>
     </NextThemesProvider>
-  )
+  );
 }
 
-export default Provider
+export default Provider;

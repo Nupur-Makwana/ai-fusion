@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+"use client"
+import React, { useContext, useState } from 'react';
 import AiModelList from './../../shared/AiModelList';
 import Image from 'next/image';
 import { Switch } from "@/components/ui/switch"
@@ -9,11 +10,17 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select"
-import { MessageSquare, Lock } from 'lucide-react'; // Added Lock icon
+import { MessageSquare, Lock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { AiSelectedModelContext } from '@/context/AiSelectedModelContext';
+import { useUser } from '@clerk/nextjs';
+import { db } from '@/config/FirebaseConfig';
+import { doc, updateDoc } from 'firebase/firestore';
 
 function AiMultiModels() {
+    const { user } = useUser();
     const [aiModelList, setAiModelList] = useState(AiModelList);
+    const { aiSelectedModels, setAiSelectedModels } = useContext(AiSelectedModelContext);
 
     const onToggleChange = (modelName, value) => {
         setAiModelList((prev) =>
@@ -21,6 +28,27 @@ function AiMultiModels() {
                 m.model === modelName ? { ...m, enable: value } : m
             )
         );
+    };
+
+    const handleSubModelChange = async (modelName, subModelId) => {
+        const updatedSelection = {
+            ...aiSelectedModels,
+            [modelName]: { modelId: subModelId }
+        };
+        
+        setAiSelectedModels(updatedSelection);
+
+        if (user?.primaryEmailAddress?.emailAddress) {
+            try {
+                const docRef = doc(db, "users", user.primaryEmailAddress.emailAddress);
+                await updateDoc(docRef, {
+                    selectedModelPref: updatedSelection
+                });
+                console.log("Firebase preference updated");
+            } catch (error) {
+                console.error("Error updating firebase:", error);
+            }
+        }
     };
 
     return (
@@ -36,14 +64,26 @@ function AiMultiModels() {
                             <Image src={model.icon} alt={model.model} width={22} height={22} />
 
                             {model.enable !== false && (
-                                <Select disabled={model.premium}> {/* Disable select if premium */}
+                                <Select
+                                    value={aiSelectedModels[model.model]?.modelId}
+                                    onValueChange={(v) => handleSubModelChange(model.model, v)}
+                                    disabled={model.premium}
+                                >
                                     <SelectTrigger className="w-[140px] h-8 text-xs focus:ring-0">
-                                        <SelectValue placeholder={model.subModel[0].name} />
+                                        <SelectValue />
                                     </SelectTrigger>
                                     <SelectContent>
                                         {model.subModel.map((sub, i) => (
-                                            <SelectItem key={i} value={sub.id} className="text-xs">
-                                                {sub.name}
+                                            <SelectItem
+                                                key={i}
+                                                value={sub.id}
+                                                className="text-xs"
+                                                disabled={sub.premium}
+                                            >
+                                                <div className="flex items-center justify-between w-full gap-5">
+                                                    <span>{sub.name}</span>
+                                                    {sub.premium && <Lock className="h-3 w-3 text-orange-500" />}
+                                                </div>
                                             </SelectItem>
                                         ))}
                                     </SelectContent>
@@ -67,12 +107,11 @@ function AiMultiModels() {
                         </div>
                     </div>
 
-                    {/* Main Chat Instance Area */}
                     <div className="flex-1 overflow-y-auto p-4 text-xs text-muted-foreground italic relative">
                         {model.model} Chat Instance...
+                        <p className="mt-2 text-[10px]">Active Model ID: {aiSelectedModels[model.model]?.modelId}</p>
 
-                        {/* Premium Lock Overlay */}
-                        {model.premium && model.enable !== false && (
+                        {(model.premium || model.subModel.find(s => s.id === aiSelectedModels[model.model]?.modelId)?.premium) && model.enable !== false && (
                             <div className='absolute inset-0 bg-background/60 backdrop-blur-[1px] flex items-center justify-center z-20'>
                                 <Button className="rounded-full shadow-lg gap-2">
                                     <Lock className='h-4 w-4' />
