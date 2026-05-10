@@ -20,7 +20,7 @@ import { doc, updateDoc } from 'firebase/firestore';
 function AiMultiModels() {
     const { user } = useUser();
     const [aiModelList, setAiModelList] = useState(AiModelList);
-    const { aiSelectedModels, setAiSelectedModels } = useContext(AiSelectedModelContext);
+    const { aiSelectedModels, setAiSelectedModels, messages } = useContext(AiSelectedModelContext);
 
     const onToggleChange = (modelName, value) => {
         setAiModelList((prev) =>
@@ -44,7 +44,6 @@ function AiMultiModels() {
                 await updateDoc(docRef, {
                     selectedModelPref: updatedSelection
                 });
-                console.log("Firebase preference updated");
             } catch (error) {
                 console.error("Error updating firebase:", error);
             }
@@ -55,11 +54,14 @@ function AiMultiModels() {
         <div className='flex w-full h-full border-b overflow-x-auto overflow-y-hidden bg-background'>
             {aiModelList.map((model, index) => (
                 <div key={index}
-                    className={`flex flex-col border-r h-full transition-all duration-300 relative ${model.enable !== false ? 'min-w-[300px] flex-1' : 'min-w-[75px] w-[75px]'
-                        } bg-card`}>
+                    className={`flex flex-col border-r h-full transition-all duration-300 relative ${
+                        model.enable !== false ? 'min-w-[300px] flex-1' : 'min-w-[75px] w-[75px]'
+                    } bg-card`}>
 
-                    <div className={`flex w-full items-center p-3 border-b sticky top-0 bg-background/90 backdrop-blur-sm ${model.enable !== false ? 'justify-between' : 'justify-center flex-col gap-4'
-                        }`}>
+                    {/* Header Section */}
+                    <div className={`flex w-full items-center p-3 border-b sticky top-0 bg-background/90 backdrop-blur-sm z-30 ${
+                        model.enable !== false ? 'justify-between' : 'justify-center flex-col gap-4'
+                    }`}>
                         <div className={`flex items-center gap-2 ${model.enable === false && 'flex-col'}`}>
                             <Image src={model.icon} alt={model.model} width={22} height={22} />
 
@@ -96,27 +98,50 @@ function AiMultiModels() {
                                 <Switch
                                     checked={model.enable ?? true}
                                     onCheckedChange={(v) => onToggleChange(model.model, v)}
-                                    className="scale-75 border border-zinc-400 dark:border-zinc-500 data-[state=unchecked]:bg-zinc-300 dark:data-[state=unchecked]:bg-zinc-700 data-[state=checked]:bg-blue-600"
+                                    className="scale-75"
                                 />
                             ) : (
                                 <MessageSquare
-                                    className="h-5 w-5 cursor-pointer text-blue-500 hover:text-blue-600"
+                                    className="h-5 w-5 cursor-pointer text-blue-500"
                                     onClick={() => onToggleChange(model.model, true)}
                                 />
                             )}
                         </div>
                     </div>
 
-                    <div className="flex-1 overflow-y-auto p-4 text-xs text-muted-foreground italic relative">
-                        {model.model} Chat Instance...
-                        <p className="mt-2 text-[10px]">Active Model ID: {aiSelectedModels[model.model]?.modelId}</p>
+                    {/* Chat Messages Area */}
+                    <div className="flex-1 overflow-y-auto p-4 space-y-4 relative scrollbar-hide">
+                        {model.enable !== false ? (
+                            <>
+                                {messages[model.model]?.map((m, i) => (
+                                    <div key={i}
+                                        className={`p-3 rounded-lg text-sm max-w-[90%] ${
+                                            m.role === 'user'
+                                                ? "bg-orange-100 text-orange-900 ml-auto shadow-sm"
+                                                : "bg-secondary text-secondary-foreground shadow-sm"
+                                        }`}>
+                                        {m.role === "assistant" && (
+                                            <p className='text-[10px] font-bold opacity-50 mb-1'>
+                                                {m.model ?? model.model}
+                                            </p>
+                                        )}
+                                        <p className={m.loading ? "animate-pulse" : ""}>{m.content}</p>
+                                    </div>
+                                ))}
 
-                        {(model.premium || model.subModel.find(s => s.id === aiSelectedModels[model.model]?.modelId)?.premium) && model.enable !== false && (
-                            <div className='absolute inset-0 bg-background/60 backdrop-blur-[1px] flex items-center justify-center z-20'>
-                                <Button className="rounded-full shadow-lg gap-2">
-                                    <Lock className='h-4 w-4' />
-                                    Upgrade to unlock
-                                </Button>
+                                {/* Premium Lock Overlay */}
+                                {(model.premium || model.subModel.find(s => s.id === aiSelectedModels[model.model]?.modelId)?.premium) && (
+                                    <div className='absolute inset-0 bg-background/60 backdrop-blur-[2px] flex items-center justify-center z-20'>
+                                        <Button className="rounded-full shadow-lg gap-2">
+                                            <Lock className='h-4 w-4' />
+                                            Upgrade to unlock
+                                        </Button>
+                                    </div>
+                                )}
+                            </>
+                        ) : (
+                            <div className="flex flex-col items-center justify-center h-full opacity-20 italic text-[10px]">
+                                <p>Model Disabled</p>
                             </div>
                         )}
                     </div>

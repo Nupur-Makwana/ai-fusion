@@ -16,6 +16,7 @@ function Provider({ children }) {
   const { user } = useUser();
   const [aiSelectedModels, setAiSelectedModels] = useState(DefaultModel);
   const [userDetail, setUserDetail] = useState();
+  const [messages,setMessages]=useState({})
 
   useEffect(() => {
     if (user) {
@@ -37,11 +38,11 @@ function Provider({ children }) {
         
         
         if (userInfo?.selectedModelPref) {
-          setAiSelectedModels(userInfo.selectedModelPref);
+          setAiSelectedModels(userInfo.selectedModelPref??DefaultModel);
+          setUserDetail(userInfo);
+           return;
         }
-        
-        setUserDetail(userInfo);
-        return;
+      
       } else {
         const userData = {
           name: user?.fullName || "Anonymous",
@@ -70,7 +71,7 @@ function Provider({ children }) {
       disableTransitionOnChange
     >
       <UserDetailContext.Provider value={{ userDetail, setUserDetail }}>
-        <AiSelectedModelContext.Provider value={{ aiSelectedModels, setAiSelectedModels }}>
+        <AiSelectedModelContext.Provider value={{ aiSelectedModels, setAiSelectedModels,messages,setMessages }}>
           <SidebarProvider>
             <AppSidebar />
             <div className='w-full flex flex-col h-screen overflow-hidden'>
