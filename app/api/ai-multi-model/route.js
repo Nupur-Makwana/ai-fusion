@@ -36,7 +36,7 @@ export async function POST(req) {
     return NextResponse.json({ 
       status: "error",
       message: error.message,
-      apiResponse: error.response?.data // This tells you what Kravix said was wrong
+      apiResponse: error.response?.data 
     }, { status: 500 });
   }
 }
